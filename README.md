@@ -2,129 +2,63 @@
 
 Лабораторна робота №1 з дисципліни «Технології розроблення серверних компонентів».
 
-Веб-сервіс на Python + Flask із двома системними ендпоінтами перевірки стану (Liveness / Readiness), контейнеризацією через Docker та CI на GitHub Actions.
+У роботі реалізовано невеликий вебсервіс на Python з використанням Flask. Він має два ендпоінти для перевірки стану сервера. Для запуску використовується Docker Compose, а для автоматичної перевірки коду — GitHub Actions.
 
-## Стек
+## Використані технології
 
-- Python 3.11, Flask, Gunicorn
+- Python 3.11, Flask
 - Docker, Docker Compose
-- GitHub Actions, Ruff (лінтер)
+- GitHub Actions
+- Ruff
 
-## Структура проєкту
+## Основні ендпоінти
 
-```
-.
-├── .github/
-│   └── workflows/
-│       └── ci.yml            # CI: лінтер + збірка Docker-образу
-├── .dockerignore
-├── .gitignore
-├── app.py                    # Flask-застосунок з healthcheck-ендпоінтами
-├── docker-compose.yaml
-├── Dockerfile                # мультистадійна збірка
-├── README.md
-└── requirements.txt          # зафіксовані версії залежностей
-```
+`GET /healthz/live` — перевіряє, чи працює застосунок. Повертає статус `alive` і поточний час UTC.
 
-## API
+`GET /healthz/ready` — перевіряє готовність сервера до роботи. Повертає статус `ready`, поточний час і стан підключення до бази даних (`not_connected_yet`).
 
-| Метод | Шлях            | Опис                                  | Статус |
-|-------|-----------------|---------------------------------------|--------|
-| GET   | `/healthz/live`  | Liveness probe — процес живий         | 200 OK |
-| GET   | `/healthz/ready` | Readiness probe — сервіс готовий до трафіку | 200 OK |
+Обидва ендпоінти повертають HTTP 200 OK.
 
-Приклад відповіді `GET /healthz/live`:
+## Запуск проєкту
 
-```json
-{
-  "status": "alive",
-  "timestamp": "2026-11-15T10:00:00.000000+00:00"
-}
-```
+Для запуску потрібен встановлений Docker Desktop.
 
-Приклад відповіді `GET /healthz/ready`:
-
-```json
-{
-  "status": "ready",
-  "database": "not_connected_yet",
-  "timestamp": "2026-11-15T10:00:00.000000+00:00"
-}
-```
-
-## Локальний запуск через Docker Compose
-
-### Вимоги
-
-- встановлений [Docker Desktop](https://www.docker.com/products/docker-desktop/) (або Docker Engine + плагін Docker Compose v2);
-- вільний порт `8080`.
-
-### Кроки
-
-1. Клонувати репозиторій:
+1. Клонувати репозиторій та перейти в папку проєкту:
 
    ```bash
    git clone <URL_репозиторію>
-   cd <назва_репозиторію>
+   cd healthcheck-service
    ```
 
-2. Зібрати образ і запустити контейнер:
+2. Зібрати та запустити контейнер:
 
    ```bash
    docker compose up --build -d
    ```
 
-3. Перевірити, що контейнер запущений (через ~30 с у колонці STATUS з'явиться `healthy`):
+3. Перевірити його стан:
 
    ```bash
    docker compose ps
    ```
 
-4. Перевірити ендпоінти:
+4. Перевірити роботу ендпоінтів:
 
    ```bash
    curl -i http://localhost:8080/healthz/live
    curl -i http://localhost:8080/healthz/ready
    ```
 
-   Або відкрити ці адреси в браузері.
-
-5. Переглянути логи:
-
-   ```bash
-   docker compose logs -f app
-   ```
-
-6. Зупинити та видалити контейнер:
+5. Зупинити контейнер:
 
    ```bash
    docker compose down
    ```
 
-## Запуск без Docker (для розробки)
+## GitHub Actions
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
+У проєкті налаштовано автоматичну перевірку при push або pull request у гілку `main`.
 
-Сервіс буде доступний на `http://localhost:8080`.
+GitHub Actions виконує перевірку коду за допомогою Ruff, збірку Docker-образу та перевірку конфігурації Docker Compose.
 
-## Лінтер
-
-```bash
-pip install ruff==0.16.9
-ruff check .
-```
-
-## CI (GitHub Actions)
-
-Workflow `.github/workflows/ci.yml` запускається при кожному `push` та `pull_request` у гілки `main` / `master` і виконує:
-
-1. статичний аналіз коду лінтером Ruff;
-2. збірку Docker-образу;
-3. валідацію конфігурації `docker-compose.yaml`.
-
-Результати доступні на вкладці **Actions** репозиторію.
+Результати перевірок можна переглянути у вкладці Actions на GitHub.
