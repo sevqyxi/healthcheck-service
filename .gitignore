@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Інструменти
+.ruff_cache/
+
+# Змінні оточення
+.env
+
+# Системні файли
+.DS_Store
+.idea/
+.vscode/
